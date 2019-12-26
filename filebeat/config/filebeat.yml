@@ -2,11 +2,20 @@ filebeat.inputs:
   - type: log
     enabled: true
     paths:
-      - /var/log/*.log
+      - /var/log/host/*.log
     fields:
       type: system
 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+filebeat.config.inputs:
+  path: ${path.config}/prospectors.d/*.yml
+  reload.enabled: false
+
 output.elasticsearch:
+  hosts: ${ELASTICSEARCH_HOSTS:}
   indices:
     index: 'system_%{+yyyy.MM}'
     when.equals:
@@ -15,6 +24,7 @@ output.elasticsearch:
 setup:
   dashboards.enabled: true
   template.enabled: false
+  kibana.host: '${KIBANA_HOST:}'
 
 monitoring.enabled: true
 

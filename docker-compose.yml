@@ -2,12 +2,12 @@ version: '2.1'
 networks:
   elastic:
 volumes:
-  datas:
-  logs:
+  filebeatdata:
+  filebeatlog:
 
 services:
   elasticsearch:
-    image: elasticsearch_ik:1.0.0
+    image: elastic_es:1.0.0
     build:
       context: ./elasticsearch
       args:
@@ -42,8 +42,8 @@ services:
     #   - |
     #     bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v${ES_VERSION}/elasticsearch-analysis-ik-${ES_VERSION}.zip
     #     bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-pinyin/releases/download/v${ES_VERSION}/elasticsearch-analysis-pinyin-${ES_VERSION}.zip
-  
-    kibana:
+
+  kibana:
     image: elastic/kibana:$ES_VERSION
     container_name: kibana
     restart: on-failure
@@ -62,10 +62,20 @@ services:
     image: elastic/filebeat:$ES_VERSION
     container_name: filebeat
     restart: on-failure
-    volumes: ['./filebeat/config/kibana.yml:/usr/share/filebeat/filebeat.yml']
+    volumes:
+      - ./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./filebeat/modules.d/elasticsearch.yml:/usr/share/filebeat/modules.d/elasticsearch.yml
+      - ./filebeat/prospectors.d/:/usr/share/filebeat/prospectors.d
+      - filebeatdata:/usr/share/filebeat/data/
+      - filebeatlog:/usr/share/filebeat/logs/
+      - /usr/share/elasticsearch/logs/:/var/log/elasticsearch/:ro
+      - /var/log/:/var/log/host:ro
+      - /var/lib/docker/containers:/hostfs/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     networks: ['elastic']
+    command: filebeat -e -strict.perms=false
     depends_on:
       elasticsearch: { condition: service_healthy }
     environment:
-      - output.elasticsearch.hosts="http://10.100.172.116:9201","http://10.100.172.117:9201","http://10.100.216.143:9201"
-      - setup.kibana.host="http://10.100.216.143:5602/"
+      - KIBANA_HOST="http://$HOST:5602"
+      - ELASTICSEARCH_HOSTS=["http://10.100.172.116:9201","http://10.100.172.117:9201","http://10.100.216.143:9201"]
