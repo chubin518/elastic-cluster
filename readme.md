@@ -13,5 +13,5 @@ chmod 777 -R /usr/share/elasticsearch/
 ##### 构建镜像并发布容器
 
 ```
-docker-compose up --build -d
+docker-compose up --build --force-recreate -d
 ```

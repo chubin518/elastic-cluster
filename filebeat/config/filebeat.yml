@@ -1,44 +1,62 @@
+filebeat.registry.path: /usr/share/filebeat/data/registry
+
+# 文件输入
 filebeat.inputs:
   - type: log
     enabled: true
     paths:
-      - /var/log/host/*.log
+      - '/var/lib/docker/containers/*/*-json.log'
     fields:
-      type: system
+      name: 'docker'
+    scan_frequency: 6s
+    harvester_buffer_size: 16384
+    encoding: utf-8
+    json.keys_under_root: true
+    json.overwrite_keys: true
+    close_inactive: 24h
+    close_renamed: true
+    # 此选项适用于Filebeat尚未处理的文件，如果设置为true，Filebeat从文件尾开始监控文件新增内容把新增的每一行文件作为一个事件依次发送而不是从文件开始处重新发送所有内容。
+    # 官网推荐：第一次在一组日志文件上运行Filebeat时，可以使用此设置来避免索引旧日志行。第一次运行后，我们建议您禁用此选项，否则您可能会在文件轮换期间丢失线路。
+    tail_files: false
+    json.message_key: log
+    multiline.pattern: '^([0-9]{4}|[0-9]{2})-[0-9]{2}'
+    multiline.negate: true
+    multiline.match: after
+    multiline.timeout: 10s
 
+# 模块输入
 filebeat.config.modules:
   path: ${path.config}/modules.d/*.yml
   reload.enabled: false
 
-filebeat.config.inputs:
-  path: ${path.config}/prospectors.d/*.yml
-  reload.enabled: false
+# 禁用默认模板
+setup.template.enable: false
 
+#输出到elasticsearch
 output.elasticsearch:
   hosts: ${ELASTICSEARCH_HOSTS:}
   indices:
-    index: 'system_%{+yyyy.MM}'
-    when.equals:
-      fields.type: 'system'
+    - index: 'elasticsearch-%{+yyyy.MM.dd}'
+      when.equals:
+        event.module: 'elasticsearch'
 
-setup:
-  dashboards.enabled: true
-  template.enabled: false
-  kibana.host: '${KIBANA_HOST:}'
+    - index: 'docker-%{+yyyy.MM.dd}'
+      when.contains:
+        fields:
+          name: 'docker'
+    - index: 'filebeat-%{+yyyy.MM.dd}'
 
-monitoring.enabled: true
+#
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
 
 # 开启日志记录
 logging.to_files: true
-# 日志等级
 logging.level: info
-# 日志文件
 logging.files:
-  # 日志位置
-  path: /usr/share/filebeat/logs
-  # 日志名字
+  path: /usr/share/filebeat/logs/
   name: filebeat
-  # 日志轮转期限，必须要2~1024
   keepfiles: 7
-  # 日志轮转权限
   permissions: 0600
+monitoring.enabled: true
