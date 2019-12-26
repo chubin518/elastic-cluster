@@ -1,0 +1,55 @@
+version: '2.1'
+networks:
+  elastic:
+volumes:
+  datas:
+  logs:
+
+services:
+  elasticsearch:
+    image: elasticsearch_ik:1.0.0
+    build:
+      context: ./elasticsearch
+      args:
+        - elk_version=$ES_VERSION
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - node.name=$HOST
+      - network.publish_host=$HOST
+      - discovery.seed_hosts=10.100.172.116:9301,10.100.172.117:9301,10.100.216.143:9301
+      - cluster.initial_master_nodes=10.100.172.116,10.100.172.117,10.100.216.143
+      - 'ES_JAVA_OPTS=-Xms1g -Xmx1g'
+    volumes:
+      - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data
+      - /usr/share/elasticsearch/logs:/usr/share/elasticsearch/logs
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    networks:
+      - elastic
+    ports: ['9201:9201', '9301:9301']
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ['CMD', 'curl', '-s', '-f', 'http://localhost:9201/_cat/health']
+    # command:
+    #   - /bin/bash
+    #   - -c
+    #   - |
+    #     bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v${ES_VERSION}/elasticsearch-analysis-ik-${ES_VERSION}.zip
+    #     bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-pinyin/releases/download/v${ES_VERSION}/elasticsearch-analysis-pinyin-${ES_VERSION}.zip
+  kibana:
+    image: elastic/kibana:$ES_VERSION
+    container_name: kibana
+    volumes: ['./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml']
+    networks: ['elastic']
+    ports: ['5602:5602']
+    healthcheck:
+      test: ['CMD', 'curl', '-s', '-f', 'http://localhost:5602/']
+    environment:
+      - SERVER_NAME=$HOST
+      - ELASTICSEARCH_HOSTS=["http://10.100.172.116:9201","http://10.100.172.117:9201","http://10.100.216.143:9201"]

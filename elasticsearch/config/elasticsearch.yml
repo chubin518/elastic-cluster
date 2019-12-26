@@ -1,0 +1,21 @@
+cluster.name: docker-cluster
+
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+transport.port: 9301
+transport.compress: true
+
+network.host: 0.0.0.0
+
+http.port: 9201
+http.cors.enabled: true
+http.cors.allow-origin: '*'
+http.max_header_size: 16kb
+http.max_content_length: 200mb
+
+gateway.recover_after_nodes: 2
+
+xpack.monitoring.enabled: true
+
+bootstrap.memory_lock: true
