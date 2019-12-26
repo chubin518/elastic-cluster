@@ -13,7 +13,7 @@ services:
       args:
         - elk_version=$ES_VERSION
     container_name: elasticsearch
-    hostname: elasticsearch
+    restart: on-failure
     environment:
       - node.name=$HOST
       - network.publish_host=$HOST
@@ -42,14 +42,30 @@ services:
     #   - |
     #     bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v${ES_VERSION}/elasticsearch-analysis-ik-${ES_VERSION}.zip
     #     bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-pinyin/releases/download/v${ES_VERSION}/elasticsearch-analysis-pinyin-${ES_VERSION}.zip
-  kibana:
+  
+    kibana:
     image: elastic/kibana:$ES_VERSION
     container_name: kibana
+    restart: on-failure
     volumes: ['./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml']
     networks: ['elastic']
     ports: ['5602:5602']
     healthcheck:
       test: ['CMD', 'curl', '-s', '-f', 'http://localhost:5602/']
+    depends_on:
+      elasticsearch: { condition: service_healthy }
     environment:
       - SERVER_NAME=$HOST
       - ELASTICSEARCH_HOSTS=["http://10.100.172.116:9201","http://10.100.172.117:9201","http://10.100.216.143:9201"]
+
+  filebeat:
+    image: elastic/filebeat:$ES_VERSION
+    container_name: filebeat
+    restart: on-failure
+    volumes: ['./filebeat/config/kibana.yml:/usr/share/filebeat/filebeat.yml']
+    networks: ['elastic']
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+    environment:
+      - output.elasticsearch.hosts="http://10.100.172.116:9201","http://10.100.172.117:9201","http://10.100.216.143:9201"
+      - setup.kibana.host="http://10.100.216.143:5602/"

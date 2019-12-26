@@ -1,0 +1,34 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/*.log
+    fields:
+      type: system
+
+output.elasticsearch:
+  indices:
+    index: 'system_%{+yyyy.MM}'
+    when.equals:
+      fields.type: 'system'
+
+setup:
+  dashboards.enabled: true
+  template.enabled: false
+
+monitoring.enabled: true
+
+# 开启日志记录
+logging.to_files: true
+# 日志等级
+logging.level: info
+# 日志文件
+logging.files:
+  # 日志位置
+  path: /usr/share/filebeat/logs
+  # 日志名字
+  name: filebeat
+  # 日志轮转期限，必须要2~1024
+  keepfiles: 7
+  # 日志轮转权限
+  permissions: 0600

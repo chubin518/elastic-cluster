@@ -17,5 +17,6 @@ http.max_content_length: 200mb
 gateway.recover_after_nodes: 2
 
 xpack.monitoring.enabled: true
+xpack.monitoring.collection.enabled: true
 
 bootstrap.memory_lock: true
