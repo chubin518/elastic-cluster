@@ -63,7 +63,7 @@ services:
       - ELASTICSEARCH_HOSTS=["http://10.100.172.116:9201","http://10.100.172.117:9201","http://10.100.216.143:9201"]
 
   filebeat:
-    privileged: true
+    user: root
     image: elastic/filebeat:$ES_VERSION
     container_name: filebeat
     labels:
@@ -71,12 +71,14 @@ services:
     restart: on-failure
     volumes:
       - ./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml
-      - ./filebeat/modules.d/elasticsearch.yml:/usr/share/filebeat/modules.d/elasticsearch.yml
+      - ./filebeat/modules.d/:/usr/share/filebeat/modules.d/
+      - ./filebeat/inputs.d/:/usr/share/filebeat/inputs.d/
       - filebeatdata:/usr/share/filebeat/data/
       - filebeatlog:/usr/share/filebeat/logs/
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers/:/var/lib/docker/containers/
       - /usr/share/elasticsearch/logs/:/var/log/elasticsearch/
+      - /var/log/:/var/log/host/:ro
     networks: ['elastic']
     command: filebeat -e -strict.perms=false
     depends_on:

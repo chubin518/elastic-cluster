@@ -2,7 +2,8 @@ filebeat.registry.path: /usr/share/filebeat/data/registry
 
 # 文件输入
 filebeat.config.inputs:
-  path: ${path.config}/prospectors.d/*.yml
+  enabled: true
+  path: ${path.config}/inputs.d/*.yml
   reload.enabled: false
 
 # 模块输入
@@ -22,9 +23,8 @@ output.elasticsearch:
         event.module: 'elasticsearch'
 
     - index: 'docker-%{+yyyy.MM.dd}'
-      when.contains:
-        fields:
-          name: 'docker'
+      when.equals:
+        fields.name: 'docker'
     - index: 'system-%{+yyyy.MM.dd}'
       when.equals:
         event.module: 'system'
