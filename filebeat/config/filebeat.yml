@@ -1,0 +1,47 @@
+filebeat.registry.path: /usr/share/filebeat/data/registry
+
+# 文件输入
+filebeat.config.inputs:
+  enabled: true
+  path: ${path.config}/inputs.d/*.yml
+  reload.enabled: false
+
+# 模块输入
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+# 禁用默认模板
+setup.template.enable: false
+
+#输出到elasticsearch
+output.elasticsearch:
+  hosts: ${ELASTICSEARCH_HOSTS:}
+  indices:
+    - index: 'elasticsearch-%{+yyyy.MM.dd}'
+      when.equals:
+        event.module: 'elasticsearch'
+
+    - index: 'docker-%{+yyyy.MM.dd}'
+      when.equals:
+        fields.name: 'docker'
+    - index: 'system-%{+yyyy.MM.dd}'
+      when.equals:
+        event.module: 'system'
+
+    - index: 'filebeat-%{+yyyy.MM.dd}'
+
+#
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+# 开启日志记录
+logging.to_files: true
+logging.level: info
+logging.files:
+  path: /usr/share/filebeat/logs/
+  name: filebeat
+  keepfiles: 7
+  permissions: 0600
+monitoring.enabled: true
