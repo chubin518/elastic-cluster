@@ -1,9 +1,21 @@
 - type: log
+  enabled: true
   paths:
-    - /hostfs/var/lib/docker/containers/*/*.log
+    - '/var/lib/docker/containers/*/*-json.log'
+  fields:
+    name: 'docker'
+  scan_frequency: 6s
+  harvester_buffer_size: 16384
+  encoding: utf-8
   json.keys_under_root: true
   json.overwrite_keys: true
   close_inactive: 24h
   close_renamed: true
-  processors:
-    - add_docker_metadata: ~
+  # 此选项适用于Filebeat尚未处理的文件，如果设置为true，Filebeat从文件尾开始监控文件新增内容把新增的每一行文件作为一个事件依次发送而不是从文件开始处重新发送所有内容。
+  # 官网推荐：第一次在一组日志文件上运行Filebeat时，可以使用此设置来避免索引旧日志行。第一次运行后，我们建议您禁用此选项，否则您可能会在文件轮换期间丢失线路。
+  tail_files: false
+  json.message_key: log
+  multiline.pattern: '^([0-9]{4}|[0-9]{2})-[0-9]{2}'
+  multiline.negate: true
+  multiline.match: after
+  multiline.timeout: 10s
